@@ -1,0 +1,9 @@
+{
+  "name": "DeutschMate",
+  "short_name": "DeutschMate",
+  "description": "A little German, every day. Personal vocabulary, flashcards, chapters, and AI tutor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7f2",
+  "theme_color": "#194e43"
+}
