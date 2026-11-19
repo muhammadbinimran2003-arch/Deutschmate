@@ -1,0 +1,1536 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#194e43">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>DeutschMate · A little German, every day</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap');
+    :root {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: #243e37;
+      background: #f6f7f2;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .45; cursor: default; }
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #dcac50; outline-offset: 3px; }
+    .shell { display: grid; grid-template-columns: 245px 1fr; min-height: 100vh; }
+    aside { background: #fff; border-right: 1px solid #e4e9e1; padding: 35px 22px; display: flex; flex-direction: column; gap: 30px; }
+    .brand { font: 800 24px Manrope, system-ui; letter-spacing: -1px; }
+    .brand span { color: #6c9b71; }
+    .logo { background: #194e43; color: white; border-radius: 12px; padding: 8px 11px; margin-right: 8px; font-size: 20px; }
+    nav { display: grid; gap: 8px; }
+    nav button { border: 0; background: none; text-align: left; padding: 14px; border-radius: 9px; color: #63736a; transition: background .15s; }
+    nav button:hover { background: #f2f5f0; }
+    nav button.active { background: #e9f1e8; color: #194e43; font-weight: 700; }
+    nav i { font-style: normal; display: inline-block; width: 28px; }
+    .aside-note { margin-top: auto; padding: 18px; background: #f5f6ed; border-radius: 12px; font-size: 13px; line-height: 1.7; }
+    .profile { border-top: 1px solid #eee; padding-top: 20px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .avatar { background: #e8c88e; padding: 8px 10px; border-radius: 50%; font-weight: 700; }
+    main { padding: 32px 5vw 50px; max-width: 1400px; width: 100%; margin: auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; font-size: 12px; color: #78867c; gap: 16px; flex-wrap: wrap; }
+    .pill { border: 1px solid #dbe3d7; border-radius: 30px; padding: 8px 12px; background: #fff; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .pill.online { border-color: #a3c9ae; background: #eaf4ec; color: #194e43; font-weight: 600; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; font-weight: 700; color: #6d8774; }
+    h1 { font: 800 clamp(28px, 3vw, 40px) Manrope, system-ui; letter-spacing: -1.5px; margin: 10px 0; }
+    h2 { font: 800 20px Manrope, system-ui; letter-spacing: -.5px; margin: 0 0 10px; }
+    h3 { font: 800 17px Manrope, system-ui; margin: 6px 0; }
+    p { line-height: 1.7; }
+    .muted { color: #77847b; font-size: 14px; }
+    .hero { background: #194e43; color: #fff; border-radius: 18px; padding: 32px 36px; margin: 28px 0; display: flex; align-items: center; justify-content: space-between; overflow: hidden; gap: 25px; }
+    .hero p { color: #c3d6ca; max-width: 460px; font-size: 14px; }
+    .hero .eyebrow { color: #a3c9ae; }
+    .hero h2 { font-size: 28px; margin: 12px 0; }
+    .plant { font-size: 85px; background: #2d6154; border: 1px solid #6c8b6b; border-radius: 50% 50% 12% 12%; padding: 22px 32px; transform: rotate(4deg); }
+    .btn { border: 0; background: #194e43; color: white; padding: 12px 20px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: opacity .15s, transform .1s; }
+    .btn:active { transform: scale(0.99); }
+    .btn.gold { background: #e9c784; color: #243e37; }
+    .btn.light { background: #eef2e9; color: #194e43; }
+    .btn.small { padding: 8px 12px; font-size: 12px; }
+    .btn.recording { background: #c93b2b; color: #fff; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 25px 0; }
+    .stat, .card { background: white; border: 1px solid #e4e8df; border-radius: 13px; padding: 23px; }
+    .stat strong { font: 800 28px Manrope, system-ui; display: block; margin: 12px 0 3px; }
+    .stat span { font-size: 12px; color: #79857c; }
+    .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 22px; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .line { border-top: 1px solid #edf0e8; padding: 16px 0; }
+    .tag { font-size: 11px; background: #eff3eb; color: #5a785f; border-radius: 5px; padding: 5px 8px; font-weight: 600; }
+    .tag.ai { background: #e6f2ed; color: #194e43; }
+    .progress { height: 6px; background: #edf0e8; border-radius: 8px; overflow: hidden; margin: 14px 0; }
+    .progress div { height: 100%; background: #83a781; transition: width .3s ease; }
+    .word { font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+    .sub { font-size: 12px; color: #7b877c; margin-top: 5px; }
+    form { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+    input, select, textarea { padding: 12px; border: 1px solid #dce3d8; border-radius: 8px; background: #fff; color: #263e35; min-width: 0; }
+    input { flex: 1; }
+    label { font-size: 13px; font-weight: 500; }
+    .field { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 160px; }
+    .notice { padding: 13px 16px; background: #f8efd9; border-radius: 8px; font-size: 13px; line-height: 1.6; margin: 16px 0; }
+    .notice.ok { background: #eaf4ec; color: #194e43; border: 1px solid #cde2d2; }
+    .feedback { padding: 15px; background: #eaf2e5; border-radius: 8px; margin: 16px 0; font-weight: 500; }
+    .flash { min-height: 290px; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
+    .flash strong { font-size: 38px; margin: 22px 10px; display: inline-flex; align-items: center; gap: 12px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 24px; }
+    .chapter-grid .card { display: flex; flex-direction: column; align-items: start; }
+    .chapter-grid .btn { margin-top: auto; }
+    .lesson { line-height: 1.9; font-size: 17px; max-width: 760px; }
+    .bubble { background: #eef3e9; padding: 15px 18px; border-radius: 12px; max-width: 85%; margin: 15px 0; font-size: 14px; white-space: pre-wrap; line-height: 1.7; position: relative; }
+    .bubble.user { background: #194e43; color: white; margin-left: auto; }
+    .bubble-actions { margin-top: 8px; display: flex; gap: 8px; align-items: center; font-size: 12px; flex-wrap: wrap; }
+    .chatlog { max-height: 460px; overflow: auto; min-height: 260px; padding-right: 4px; }
+    .footer { font-size: 11px; color: #8b948a; margin-top: 35px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    a { color: #194e43; }
+    .danger { background: #fbefea; color: #93492d; border: 0; border-radius: 5px; padding: 7px 10px; }
+    .icon-btn { background: #eef2e9; color: #194e43; border: 0; border-radius: 6px; padding: 5px 9px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+    .icon-btn:hover { background: #dfe8d9; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    td, th { text-align: left; border-bottom: 1px solid #edf0e8; padding: 15px 6px; }
+    th { color: #829081; font-size: 11px; text-transform: uppercase; }
+    .table-wrap { overflow-x: auto; }
+    .direction-picker { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+    .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .google-sign-in { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: white; border: 1px solid #747775; border-radius: 6px; color: #1f1f1f; padding: 9px 14px; font: 500 13px system-ui, sans-serif; min-height: 38px; }
+    .google-sign-in:hover { background: #f0f4f9; }
+    .pdf-box { border: 2px dashed #cbd7c6; background: #fafbf8; border-radius: 12px; padding: 20px; margin-top: 16px; }
+    .candidate-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 14px 0; max-height: 300px; overflow-y: auto; }
+    .candidate-item { border: 1px solid #dce3d8; border-radius: 8px; padding: 10px 12px; background: #fff; display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+    dialog { border: 1px solid #dce3d8; border-radius: 16px; padding: 28px; max-width: 540px; width: calc(100% - 36px); color: #243e37; box-shadow: 0 20px 80px #0003; }
+    dialog::backdrop { background: #173d3466; }
+    @media(max-width:1000px) {
+      .shell { grid-template-columns: 195px 1fr; }
+      aside { padding: 25px 12px; }
+      .brand { font-size: 20px; }
+      main { padding: 25px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .chapter-grid { grid-template-columns: repeat(2, 1fr); }
+      .plant { display: none; }
+    }
+    @media(max-width:680px) {
+      .shell { display: block; }
+      aside { padding: 18px; gap: 16px; border-bottom: 1px solid #ddd; }
+      nav { display: flex; overflow: auto; gap: 5px; }
+      nav button { white-space: nowrap; padding: 10px; font-size: 12px; }
+      nav i, .aside-note, .profile { display: none; }
+      main { padding: 22px 18px; }
+      header { margin-bottom: 25px; align-items: flex-start; flex-direction: column; }
+      .header-actions { width: 100%; justify-content: space-between; }
+      .grid, .chapter-grid { grid-template-columns: 1fr; }
+      .hero { padding: 25px; }
+      .stat { padding: 16px; }
+      .stats { gap: 10px; }
+      .bubble { max-width: 95%; }
+      h1 { font-size: 30px; }
+      .flash strong { font-size: 28px; }
+      .direction-picker .btn { flex: 1; font-size: 13px; padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+const DAY = 86400000;
+const KEY = 'deutschmate.v1';
+const CFG_KEY = 'deutschmate.config.v1';
+
+const normalize = s => String(s || '')
+  .toLocaleLowerCase('de')
+  .normalize('NFC')
+  .trim()
+  .replace(/[.!?]+$/, '')
+  .replace(/\s+/g, ' ');
+
+function createWord(german, english, now = Date.now(), source = 'manual') {
+  return {
+    id: (globalThis.crypto?.randomUUID?.() || 'word-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)),
+    german: String(german).trim(),
+    english: String(english).trim(),
+    level: 0,
+    errors: 0,
+    reviews: 0,
+    due: now,
+    added: now,
+    source
+  };
+}
+
+function review(word, correct, now = Date.now()) {
+  const level = correct ? Math.min(6, word.level + 1) : Math.max(0, word.level - 1);
+  const intervals = [0, 1, 3, 7, 14, 30, 60];
+  return {
+    ...word,
+    level,
+    errors: word.errors + (correct ? 0 : 1),
+    reviews: word.reviews + 1,
+    due: now + (correct ? intervals[level] * DAY : 10 * 60000),
+    updatedAt: now
+  };
+}
+
+function practiceWords(words, now = Date.now()) {
+  return [...words].sort((a, b) =>
+    (b.errors * 4 + (6 - b.level) + (b.due <= now ? 5 : 0)) -
+    (a.errors * 4 + (6 - a.level) + (a.due <= now ? 5 : 0)) ||
+    a.added - b.added
+  );
+}
+
+const chapters = [
+  {
+    id: 'a1-1',
+    level: 'A1',
+    title: 'Hallo, Welt!',
+    topic: 'Greetings & introductions',
+    lesson: 'Say Hallo (hello), Guten Morgen (good morning), and Tschüss (bye). Introduce yourself with Ich heiße … (My name is …). Ask Wie heißt du? (What is your name?).',
+    question: 'Complete: Ich ___ Sara. (My name is Sara.)',
+    answer: 'heiße',
+    alternatives: ['heisse'],
+    words: [['Hallo', 'hello'], ['Guten Morgen', 'good morning'], ['Tschüss', 'bye']]
+  },
+  {
+    id: 'a1-2',
+    level: 'A1',
+    title: 'Meine kleine Welt',
+    topic: 'People & family',
+    lesson: 'German nouns always have articles: der Vater (the father), die Mutter (the mother), das Kind (the child). Learn every noun together with its article. Mein Vater means my father; meine Mutter means my mother.',
+    question: 'Give the German for “the mother” (include the article).',
+    answer: 'die Mutter',
+    words: [['die Mutter', 'the mother'], ['der Vater', 'the father'], ['das Kind', 'the child']]
+  },
+  {
+    id: 'a1-3',
+    level: 'A1',
+    title: 'Ein Kaffee, bitte',
+    topic: 'Food & everyday requests',
+    lesson: 'Use Ich möchte … (I would like …) for polite everyday requests: Ich möchte einen Kaffee, bitte. Danke means thank you, and Die Rechnung, bitte means the bill, please.',
+    question: 'Which word means “please”?',
+    answer: 'bitte',
+    words: [['bitte', 'please'], ['das Wasser', 'the water'], ['der Kaffee', 'the coffee']]
+  },
+  {
+    id: 'a2-1',
+    level: 'A2',
+    title: 'Gestern & heute',
+    topic: 'Talking about the past',
+    lesson: 'The conversational past (Perfekt) combines haben or sein with a past participle at the end of the clause. Ich habe Deutsch gelernt (I learned German). For movement or change of state: Ich bin nach Berlin gefahren (I traveled to Berlin).',
+    question: 'Complete: Ich ___ Deutsch gelernt.',
+    answer: 'habe',
+    words: [['lernen', 'to learn'], ['gestern', 'yesterday'], ['heute', 'today']]
+  },
+  {
+    id: 'a2-2',
+    level: 'A2',
+    title: 'Unterwegs',
+    topic: 'Travel & directions',
+    lesson: 'Ask Wo ist der Bahnhof? (Where is the train station?). Links means left, rechts means right, and geradeaus means straight ahead. Ich fahre mit dem Zug means I travel by train.',
+    question: 'Give the German for “straight ahead”.',
+    answer: 'geradeaus',
+    words: [['der Bahnhof', 'the train station'], ['geradeaus', 'straight ahead'], ['der Zug', 'the train']]
+  },
+  {
+    id: 'a2-3',
+    level: 'A2',
+    title: 'Weil ich Deutsch mag',
+    topic: 'Reasons & connected sentences',
+    lesson: 'Weil means because. In a weil subordinate clause, the conjugated verb moves to the very end: Ich lerne Deutsch, weil ich in Berlin wohne. (I learn German because I live in Berlin.)',
+    question: 'Complete: … weil ich in Berlin ___. (live)',
+    answer: 'wohne',
+    words: [['weil', 'because'], ['wohnen', 'to live'], ['verstehen', 'to understand']]
+  }
+];
+
+function demoReply(message, words) {
+  const s = normalize(message);
+  if (s.includes('ich bin gut')) {
+    return 'Kleiner Tipp: “Mir geht es gut” is the natural German way to say “I’m doing well.” (“Ich bin gut” sounds like “I am skilled”). Wie geht es dir heute?';
+  }
+  if (s.includes('hallo') || s.includes('hello') || s.includes('guten tag')) {
+    return 'Hallo! Schön, dass du da bist. Stell dich gerne auf Deutsch vor: “Ich heiße … und ich lerne Deutsch.”';
+  }
+  if (s.includes('help') || s.includes('hilfe')) {
+    return 'Probier diesen Satz im Café: “Ich möchte einen Kaffee, bitte.” (I would like a coffee, please.) Wie würdest du Tee bestellen?';
+  }
+  const matched = words.find(w => s.includes(normalize(w.german)));
+  if (matched) {
+    return `Super! Du hast „${matched.german}“ (${matched.english}) benutzt. Schreib noch einen kurzen Satz damit — oder verbinde deinen Gemini API-Schlüssel oben unter „AI & Sync“ für echte KI-Gespräche.`;
+  }
+  const target = words[0];
+  return `Lass uns ${target ? `„${target.german}“ (${target.english})` : 'deine ersten Sätze'} üben! Schreib einen kurzen deutschen Satz (oder verbinde oben unter „AI & Sync“ die Gemini API für echte Live-Konversationen).`;
+}
+
+const initial = () => ({
+  version: 1,
+  updatedAt: Date.now(),
+  words: [
+    createWord('der Alltag', 'everyday life'),
+    createWord('gemütlich', 'cozy'),
+    createWord('lernen', 'to learn'),
+    createWord('die Reise', 'the journey'),
+    createWord('zusammen', 'together')
+  ],
+  completed: [],
+  chat: [],
+  activity: []
+});
+
+const initialConfig = () => ({
+  geminiKey: '',
+  geminiModel: 'gemini-3.8-flash',
+  autoSpeakTutor: true,
+  speechRate: 0.95,
+  supabaseUrl: '',
+  supabaseAnonKey: ''
+});
+
+let state, config, storageError = false;
+try {
+  state = JSON.parse(localStorage.getItem(KEY));
+  if (!state || state.version !== 1 || !Array.isArray(state.words) || !Array.isArray(state.completed) || !Array.isArray(state.chat)) {
+    state = initial();
+  }
+  state.activity ??= [];
+  state.updatedAt ??= Date.now();
+} catch {
+  state = initial();
+  storageError = true;
+}
+
+try {
+  config = { ...initialConfig(), ...(JSON.parse(localStorage.getItem(CFG_KEY)) || {}) };
+  if (!config.geminiModel || config.geminiModel.startsWith('gemini-2.5')) {
+    config.geminiModel = 'gemini-3.8-flash';
+  }
+} catch {
+  config = initialConfig();
+}
+
+let flashDirection = 'en-de';
+let page = 'home', feedback = '', cardId = null, revealed = false, practiceId = null, answered = false, lessonId = null;
+let aiBusy = false, pdfBusy = false, isListening = false;
+let pdfCandidates = [];
+let pdfSummary = '';
+let supabaseClient = null;
+let currentUser = null;
+let syncStatus = 'Local browser storage';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const syncChannel = ('BroadcastChannel' in globalThis) ? new BroadcastChannel('deutschmate_sync_v1') : null;
+if (syncChannel) {
+  syncChannel.onmessage = (ev) => {
+    if (ev.data?.type === 'STATE_UPDATED' && ev.data.state && ev.data.state.updatedAt > (state.updatedAt || 0)) {
+      state = ev.data.state;
+      render();
+    }
+  };
+}
+window.addEventListener('storage', (ev) => {
+  if (ev.key === KEY && ev.newValue) {
+    try {
+      const incoming = JSON.parse(ev.newValue);
+      if (incoming && incoming.updatedAt >= (state.updatedAt || 0)) {
+        state = incoming;
+        render();
+      }
+    } catch {}
+  }
+});
+
+function saveConfig() {
+  try {
+    localStorage.setItem(CFG_KEY, JSON.stringify(config));
+  } catch {}
+}
+
+function save(pushCloud = true) {
+  state.updatedAt = Date.now();
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    storageError = false;
+    syncChannel?.postMessage({ type: 'STATE_UPDATED', state });
+  } catch {
+    storageError = true;
+  }
+  if (pushCloud && supabaseClient && currentUser) {
+    pushStateToCloud();
+  }
+}
+
+function record() {
+  const date = new Date().toLocaleDateString('en-CA');
+  if (!state.activity.includes(date)) state.activity.push(date);
+  save();
+}
+
+const due = () => state.words.filter(w => w.due <= Date.now());
+const mastered = () => state.words.filter(w => w.level >= 4).length;
+const btn = (text, action, cls = '', extra = '') => `<button class="btn ${cls}" data-action="${action}" ${extra}>${text}</button>`;
+
+function mergeStates(local, remote) {
+  if (!remote || !Array.isArray(remote.words)) return local;
+  const map = new Map();
+  for (const w of [...remote.words, ...local.words]) {
+    const key = normalize(w.german);
+    const prev = map.get(key);
+    if (!prev || (w.reviews || 0) > (prev.reviews || 0) || (w.updatedAt || 0) > (prev.updatedAt || 0)) {
+      map.set(key, w);
+    }
+  }
+  const completed = Array.from(new Set([...(remote.completed || []), ...(local.completed || [])]));
+  const activity = Array.from(new Set([...(remote.activity || []), ...(local.activity || [])])).sort();
+  const chat = (local.updatedAt || 0) >= (remote.updatedAt || 0) ? local.chat : (remote.chat || local.chat);
+  return {
+    version: 1,
+    updatedAt: Math.max(local.updatedAt || 0, remote.updatedAt || 0, Date.now()),
+    words: Array.from(map.values()),
+    completed,
+    activity,
+    chat
+  };
+}
+
+async function initSupabase() {
+  if (!config.supabaseUrl || !config.supabaseAnonKey || !globalThis.supabase) return;
+  try {
+    supabaseClient = globalThis.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    currentUser = session?.user || null;
+    if (currentUser) {
+      syncStatus = `Synced · ${currentUser.email}`;
+      await pullStateFromCloud();
+    }
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      currentUser = session?.user || null;
+      syncStatus = currentUser ? `Synced · ${currentUser.email}` : 'Local browser storage';
+      if (currentUser) await pullStateFromCloud();
+      render();
+    });
+    render();
+  } catch (err) {
+    console.warn('Supabase init notice:', err);
+  }
+}
+
+async function pullStateFromCloud() {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { data, error } = await supabaseClient
+      .from('user_state')
+      .select('state')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (!error && data?.state) {
+      state = mergeStates(state, data.state);
+      save(false);
+      render();
+    } else {
+      await pushStateToCloud();
+    }
+  } catch {}
+}
+
+async function pushStateToCloud() {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    await supabaseClient
+      .from('user_state')
+      .upsert({ user_id: currentUser.id, state, updated_at: new Date().toISOString() });
+    syncStatus = `Synced · ${currentUser.email}`;
+  } catch {}
+}
+
+function speakGerman(text) {
+  if (!('speechSynthesis' in globalThis) || !text) return;
+  globalThis.speechSynthesis.cancel();
+  const cleanText = String(text).replace(/[*_#`~]+/g, '').trim();
+  const utter = new SpeechSynthesisUtterance(cleanText);
+  utter.lang = 'de-DE';
+  utter.rate = Number(config.speechRate) || 0.95;
+  const voices = globalThis.speechSynthesis.getVoices();
+  const deVoice = voices.find(v => v.lang.toLowerCase().startsWith('de') && /premium|enhanced|natural|anna|helena|petra|markus|google/i.test(v.name))
+               || voices.find(v => v.lang.toLowerCase().startsWith('de'));
+  if (deVoice) utter.voice = deVoice;
+  globalThis.speechSynthesis.speak(utter);
+}
+
+let recognitionInstance = null;
+function toggleVoiceInput(onTranscript) {
+  const SpeechRec = globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    feedback = 'Voice recognition is supported in Chrome, Edge, and Safari. Check microphone permissions.';
+    render();
+    return;
+  }
+  if (isListening && recognitionInstance) {
+    recognitionInstance.stop();
+    isListening = false;
+    render();
+    return;
+  }
+  recognitionInstance = new SpeechRec();
+  recognitionInstance.lang = 'de-DE';
+  recognitionInstance.interimResults = false;
+  recognitionInstance.maxAlternatives = 1;
+  isListening = true;
+  render();
+
+  recognitionInstance.onresult = (event) => {
+    const transcript = event.results?.[0]?.[0]?.transcript || '';
+    isListening = false;
+    if (transcript) onTranscript(transcript);
+    else render();
+  };
+  recognitionInstance.onerror = () => {
+    isListening = false;
+    feedback = 'Could not hear clearly. Try speaking in German again.';
+    render();
+  };
+  recognitionInstance.onend = () => {
+    isListening = false;
+    render();
+  };
+  recognitionInstance.start();
+}
+
+async function callGeminiAPI({ systemInstruction, contents, responseJson = false }) {
+  if (!config.geminiKey) throw new Error('NO_API_KEY');
+  const primary = config.geminiModel || 'gemini-3.8-flash';
+  const candidates = Array.from(new Set([primary, 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']));
+  const body = {
+    contents,
+    generationConfig: {
+      temperature: responseJson ? 0.2 : 0.65
+    }
+  };
+  if (systemInstruction) {
+    body.systemInstruction = { parts: [{ text: systemInstruction }] };
+  }
+  if (responseJson) {
+    body.generationConfig.responseMimeType = 'application/json';
+  }
+
+  let lastError = 'Gemini API request failed.';
+  for (const model of candidates) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(config.geminiKey)}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+      if (text) return text;
+      lastError = 'Empty response from Gemini API.';
+      continue;
+    }
+    const errText = await res.text();
+    lastError = `API error (${res.status}): ${errText.slice(0, 160)}`;
+    if (res.status !== 503 && res.status !== 429) {
+      throw new Error(lastError);
+    }
+  }
+  throw new Error(lastError);
+}
+
+async function extractPdfText(file) {
+  const pdfjsLib = globalThis['pdfjs-dist/build/pdf'] || globalThis.pdfjsLib;
+  if (!pdfjsLib) throw new Error('PDF.js library is still loading. Please try again in a second.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const maxPages = Math.min(pdf.numPages, 15);
+  let fullText = '';
+  for (let i = 1; i <= maxPages; i++) {
+    const pageObj = await pdf.getPage(i);
+    const content = await pageObj.getTextContent();
+    fullText += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return { text: fullText.trim(), pages: pdf.numPages, scannedPages: maxPages };
+}
+
+function localExtractVocabFromText(rawText) {
+  const results = [];
+  const seen = new Set(state.words.map(w => normalize(w.german)));
+  const lines = rawText.split(/[\r\n]+/);
+
+  for (const line of lines) {
+    const m = line.match(/^\s*([A-Za-zÄÖÜäöüß\s]{2,40})\s*(?:[-–—:=]|\t)\s*([A-Za-z,\s()to]{2,50})\s*$/);
+    if (m) {
+      const g = m[1].trim(), e = m[2].trim();
+      const key = normalize(g);
+      if (g && e && !seen.has(key) && results.length < 30) {
+        seen.add(key);
+        results.push({ german: g, english: e, selected: true });
+      }
+    }
+  }
+
+  const nounRegex = /\b(der|die|das)\s+([A-ZÄÖÜ][a-zäöüß]{2,25})\b/g;
+  let match;
+  while ((match = nounRegex.exec(rawText)) !== null && results.length < 25) {
+    const phrase = `${match[1].toLowerCase()} ${match[2]}`;
+    const key = normalize(phrase);
+    if (!seen.has(key)) {
+      seen.add(key);
+      results.push({ german: phrase, english: '(add English meaning or connect AI)', selected: true });
+    }
+  }
+  return results;
+}
+
+async function handlePdfUpload(file) {
+  if (!file) return;
+  pdfBusy = true;
+  pdfCandidates = [];
+  pdfSummary = `Reading "${file.name}"…`;
+  render();
+  try {
+    const { text, pages, scannedPages } = await extractPdfText(file);
+    if (!text || text.length < 10) {
+      feedback = 'This PDF appears to contain scanned images rather than selectable text.';
+      pdfBusy = false;
+      pdfSummary = '';
+      render();
+      return;
+    }
+
+    if (config.geminiKey) {
+      pdfSummary = `Analyzing ${scannedPages} of ${pages} page(s) with Gemini AI…`;
+      render();
+      const existingList = state.words.map(w => w.german).slice(0, 80).join(', ');
+      const prompt = `You are a German vocabulary extraction assistant for a learner's personal app called DeutschMate.
+Analyze the following PDF text and extract up to 20 of the most useful German vocabulary words or short phrases (A1–B1 level).
+Rules:
+1. For ALL German nouns, ALWAYS include the definite article ("der ", "die ", or "das ") in the "german" field, e.g. "der Alltag", "die Reise", "das Buch".
+2. For verbs, give the infinitive in German and "to ..." in English.
+3. Exclude words the user already has in their bank: [${existingList}].
+4. Return a JSON array of objects with exact keys: [{"german": "der ...", "english": "the ..."}].
+
+PDF TEXT (excerpt):
+${text.slice(0, 18000)}`;
+
+      const jsonText = await callGeminiAPI({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        responseJson: true
+      });
+      const parsed = JSON.parse(jsonText);
+      const list = Array.isArray(parsed) ? parsed : (parsed.words || []);
+      const existingSet = new Set(state.words.map(w => normalize(w.german)));
+      pdfCandidates = list
+        .filter(item => item?.german && item?.english && !existingSet.has(normalize(item.german)))
+        .map(item => ({
+          german: String(item.german).trim(),
+          english: String(item.english).trim(),
+          selected: true
+        }));
+      pdfSummary = `AI extracted ${pdfCandidates.length} new vocabulary item(s) from "${file.name}". Review and save them below:`;
+    } else {
+      pdfCandidates = localExtractVocabFromText(text);
+      pdfSummary = pdfCandidates.length
+        ? `Found ${pdfCandidates.length} candidate item(s) from "${file.name}" using local pattern matching (connect your Gemini API key in "AI & Sync" for automatic AI translations):`
+        : `Read "${file.name}", but no structured word pairs were detected locally. Connect your Gemini API key in "AI & Sync" so AI can analyze any German PDF and translate new nouns with articles automatically.`;
+    }
+  } catch (err) {
+    feedback = `PDF analysis error: ${err.message || 'Could not process PDF.'}`;
+    pdfSummary = '';
+  } finally {
+    pdfBusy = false;
+    render();
+  }
+}
+
+function go(p) {
+  page = p;
+  feedback = '';
+  lessonId = null;
+  cardId = null;
+  practiceId = null;
+  revealed = false;
+  answered = false;
+  render();
+}
+
+function home() {
+  const next = chapters.find(c => !state.completed.includes(c.id)) || chapters[0];
+  return `
+    <div class="eyebrow">YOUR EVERYDAY GERMAN COMPANION</div>
+    <h1>Small steps. Real conversations.</h1>
+    <div class="muted">Willkommen zurück. Let’s make a little progress today.</div>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">A LITTLE EVERY DAY GOES A LONG WAY</div>
+        <h2>Your next chapter starts here.</h2>
+        <p>Learn something new, revisit what matters, and make German part of your everyday life.</p>
+        ${btn('Continue learning &nbsp; ↗', 'chapters', 'gold')}
+      </div>
+      <div class="plant" aria-hidden="true">🌱</div>
+    </section>
+    <div class="stats">
+      ${[
+        ['Vocabulary bank', state.words.length, 'words collected'],
+        ['Ready to review', due().length, 'flashcards waiting'],
+        ['Words mastered', mastered(), 'at review level 4+'],
+        ['Chapters complete', `${state.completed.length}/${chapters.length}`, 'small wins, big progress']
+      ].map(([t, n, s]) => `<div class="stat"><span>${t}</span><strong>${n}</strong><span>${s}</span></div>`).join('')}
+    </div>
+    <div class="grid">
+      <section class="card">
+        <div class="row"><h2>Your learning path</h2><span class="tag">A1 → A2</span></div>
+        <div class="progress"><div style="width:${(state.completed.length / chapters.length) * 100}%"></div></div>
+        <div class="line">
+          <div class="eyebrow">UP NEXT · ${next.level}</div>
+          <h3>${esc(next.title)}</h3>
+          <p class="muted">${esc(next.topic)}</p>
+          ${btn('Explore chapters →', 'chapters', 'light')}
+        </div>
+        <div class="line row">
+          <div>
+            <strong>Practice, made personal</strong>
+            <div class="sub">Your new words and mistakes guide the next question.</div>
+          </div>
+          ${btn('Let’s practice', 'practice', 'small')}
+        </div>
+      </section>
+      <section class="card">
+        <div class="row">
+          <h2>Words worth remembering</h2>
+          <div class="actions">
+            ${btn('📄 Upload PDF', 'vocabulary', 'small light')}
+            ${btn('+ Add words', 'vocabulary', 'small')}
+          </div>
+        </div>
+        ${state.words.slice(-3).reverse().map(w => `
+          <div class="line row">
+            <div>
+              <div class="word">
+                ${esc(w.german)}
+                <button class="icon-btn" data-speak="${esc(w.german)}" title="Listen in German" aria-label="Pronounce ${esc(w.german)}">🔊</button>
+              </div>
+              <div class="sub">${esc(w.english)}</div>
+            </div>
+            <span class="tag">Level ${w.level}/6</span>
+          </div>
+        `).join('') || '<p class="muted">Your next discovery belongs here.</p>'}
+        <div class="notice">✦ Your vocabulary, PDF imports, flashcards, practice, and AI tutor all stay in sync automatically.</div>
+      </section>
+    </div>`;
+}
+
+function vocabulary() {
+  return `
+    <div class="eyebrow">YOUR PERSONAL WORD COLLECTION</div>
+    <h1>Make every word yours.</h1>
+    <p class="muted">Save nouns with their articles (der, die, das), or upload a German PDF worksheet or article for AI vocabulary extraction.</p>
+    <div class="grid" style="margin-bottom:22px">
+      <section class="card">
+        <div class="row">
+          <h2>Add a new word</h2>
+          ${config.geminiKey ? `<span class="tag ai">✦ AI article & translation helper active</span>` : ''}
+        </div>
+        <form id="word-form">
+          <label class="field">German word or phrase
+            <input name="german" id="input-german" required maxlength="100" placeholder="e.g. der Sonnenaufgang">
+          </label>
+          <label class="field">English meaning
+            <input name="english" id="input-english" maxlength="160" placeholder="${config.geminiKey ? 'Leave blank for AI auto-translate…' : 'e.g. the sunrise'}">
+          </label>
+          <button class="btn" ${aiBusy ? 'disabled' : ''}>${aiBusy ? 'Translating…' : 'Save word +'}</button>
+        </form>
+        <p class="sub">${config.geminiKey ? 'Tip: With Gemini AI connected, you can enter just a German word and AI will supply the article and English meaning.' : 'Enter both the German word (with article for nouns) and its English meaning.'}</p>
+      </section>
+
+      <section class="card">
+        <div class="row">
+          <h2>Import vocabulary from PDF</h2>
+          <span class="tag ai">${config.geminiKey ? '✦ Gemini AI Analyzer' : 'Pattern / AI Ready'}</span>
+        </div>
+        <div class="pdf-box">
+          <p class="muted" style="margin-top:0">Upload any German PDF lesson, story, or word list. DeutschMate extracts the text and identifies new German words (with articles for nouns) that aren't in your bank yet.</p>
+          <div class="actions">
+            <label class="btn ${pdfBusy ? 'light' : ''}">
+              ${pdfBusy ? '⏳ Analyzing PDF…' : '📄 Choose PDF file'}
+              <input type="file" id="pdf-upload" accept="application/pdf,.pdf" hidden ${pdfBusy ? 'disabled' : ''}>
+            </label>
+            ${!config.geminiKey ? btn('Connect Gemini API for AI PDF analysis', 'open-settings', 'small light') : ''}
+          </div>
+        </div>
+        ${pdfSummary ? `<p class="sub" style="margin-top:12px"><strong>${esc(pdfSummary)}</strong></p>` : ''}
+        ${pdfCandidates.length ? `
+          <div class="candidate-list">
+            ${pdfCandidates.map((c, idx) => `
+              <label class="candidate-item">
+                <input type="checkbox" data-pdf-idx="${idx}" ${c.selected ? 'checked' : ''} style="flex:0">
+                <div>
+                  <strong>${esc(c.german)}</strong>
+                  <div class="sub">${esc(c.english)}</div>
+                </div>
+              </label>
+            `).join('')}
+          </div>
+          <div class="actions">
+            ${btn('Add selected words to my bank +', 'save-pdf-words', 'gold')}
+            ${btn('Dismiss', 'clear-pdf-words', 'small light')}
+          </div>
+        ` : ''}
+      </section>
+    </div>
+
+    <div class="row">
+      <h2>Your vocabulary · ${state.words.length}</h2>
+      <input id="search" aria-label="Search vocabulary" placeholder="Search your words…" style="max-width:320px">
+    </div>
+    <div class="card table-wrap" style="margin-top:12px">
+      <table>
+        <thead>
+          <tr><th>German / English</th><th>Mastery</th><th>Next Review</th><th></th></tr>
+        </thead>
+        <tbody id="word-rows">${wordRows(state.words)}</tbody>
+      </table>
+    </div>
+    <div class="actions" style="margin-top:20px">
+      ${btn('Export backup ↓', 'export', 'light')}
+      <label class="btn light">Import backup<input type="file" id="import" accept="application/json" hidden></label>
+    </div>
+    <p class="sub">All words added manually, from chapters, from PDF uploads, or during Tutor Chat immediately sync with Flashcards and Practice.</p>`;
+}
+
+function wordRows(words) {
+  return words.map(w => `
+    <tr>
+      <td>
+        <div class="word">
+          <strong>${esc(w.german)}</strong>
+          <button class="icon-btn" data-speak="${esc(w.german)}" title="Pronounce ${esc(w.german)}" aria-label="Pronounce ${esc(w.german)}">🔊</button>
+        </div>
+        <div class="sub">${esc(w.english)}</div>
+      </td>
+      <td>
+        <span class="tag">${w.level >= 4 ? 'Mastered' : 'Learning'} · ${w.level}/6</span>
+        <div class="sub">${w.errors} ${w.errors === 1 ? 'mistake' : 'mistakes'} · ${w.reviews} ${w.reviews === 1 ? 'review' : 'reviews'}</div>
+      </td>
+      <td>${w.due <= Date.now() ? 'Ready now' : esc(new Date(w.due).toLocaleDateString())}</td>
+      <td><button class="danger" data-delete="${esc(w.id)}" aria-label="Delete ${esc(w.german)}">×</button></td>
+    </tr>`).join('') || '<tr><td colspan="4">No words yet. Add your first word or upload a PDF above.</td></tr>';
+}
+
+function flashcards() {
+  const queue = due();
+  let w = queue.find(x => x.id === cardId) || queue[0];
+  cardId = w?.id;
+  const frontIsGerman = flashDirection === 'de-en';
+  const backIsGerman = flashDirection === 'en-de';
+  return `
+    <div class="eyebrow">A LITTLE RECALL, A LASTING MEMORY</div>
+    <h1>Your daily review.</h1>
+    <p class="muted">${queue.length} due now · Choose a direction, recall the translation, then reveal.</p>
+    <div class="direction-picker" role="group" aria-label="Flashcard translation direction">
+      <button class="btn ${flashDirection === 'en-de' ? '' : 'light'}" data-action="direction-en" aria-pressed="${flashDirection === 'en-de'}">English → German</button>
+      <button class="btn ${flashDirection === 'de-en' ? '' : 'light'}" data-action="direction-de" aria-pressed="${flashDirection === 'de-en'}">German → English</button>
+    </div>
+    <section class="card flash">
+      ${w ? `
+        <span class="tag">${flashDirection === 'en-de' ? 'ENGLISH → GERMAN' : 'GERMAN → ENGLISH'} · LEVEL ${w.level}/6</span>
+        <strong>
+          ${esc(frontIsGerman ? w.german : w.english)}
+          ${frontIsGerman ? `<button class="icon-btn" data-speak="${esc(w.german)}" title="Pronounce German">🔊</button>` : ''}
+        </strong>
+        ${revealed ? `
+          <h2>
+            ${esc(backIsGerman ? w.german : w.english)}
+            ${backIsGerman ? `<button class="icon-btn" data-speak="${esc(w.german)}" title="Pronounce German">🔊</button>` : ''}
+          </h2>
+          <p class="muted">How did you do? Rate honestly to set your next review.</p>
+          <div class="actions">
+            ${btn('Again · 10 min', 'again', 'light')}
+            ${btn('Got it ✓', 'got')}
+          </div>
+        ` : btn('Reveal answer', 'reveal', 'light')}
+      ` : '<h2>All caught up. Gut gemacht!</h2><p class="muted">Come back when more cards are due, or add new words from a chapter or PDF.</p>' + btn('Add vocabulary', 'vocabulary', 'light')}
+    </section>
+    <p class="sub">Both directions share the same word mastery and review schedule. Successful intervals: 1, 3, 7, 14, 30, 60 days. A miss moves the word down one level and brings it back in 10 minutes.</p>`;
+}
+
+function practice() {
+  let w = state.words.find(x => x.id === practiceId) || practiceWords(state.words)[0];
+  practiceId = w?.id;
+  return `
+    <div class="eyebrow">BUILT AROUND WHAT YOU’RE LEARNING</div>
+    <h1>A little practice. A lot of progress.</h1>
+    <p class="muted">Mistakes get extra attention, followed by due cards and newly added words.</p>
+    <section class="card">
+      ${w ? `
+        <div class="row">
+          <span class="tag">PERSONALIZED · ACTIVE RECALL</span>
+          <span class="sub">${w.errors} past ${w.errors === 1 ? 'mistake' : 'mistakes'} · level ${w.level}/6</span>
+        </div>
+        <p>Type or speak the German for:</p>
+        <h2>${esc(w.english)}</h2>
+        <form id="practice-form">
+          <input name="answer" id="practice-input" aria-label="German answer" autocomplete="off" required placeholder="Your answer, auf Deutsch…" ${answered ? 'disabled' : ''}>
+          <button type="button" class="btn ${isListening ? 'recording' : 'light'}" data-action="voice-practice" ${answered ? 'disabled' : ''} title="Speak your German answer">
+            ${isListening ? '⏹ Listening…' : '🎤 Speak'}
+          </button>
+          <button class="btn" ${answered ? 'disabled' : ''}>Check answer</button>
+        </form>
+        ${answered ? `
+          <div class="actions">
+            <button class="icon-btn" data-speak="${esc(w.german)}">🔊 Hear “${esc(w.german)}”</button>
+            ${btn('Next question →', 'next', 'light')}
+          </div>
+        ` : ''}
+        <p class="sub">Include articles for nouns (e.g. der, die, das). Capitalization and final punctuation are ignored; spelling and umlauts matter.</p>
+      ` : '<h2>Your practice starts with a word.</h2>' + btn('Add your first word', 'vocabulary')}
+    </section>`;
+}
+
+function chapterView() {
+  const c = chapters.find(x => x.id === lessonId);
+  if (c) {
+    return `
+      <div class="eyebrow">${c.level} · ${esc(c.topic)}</div>
+      <h1>${esc(c.title)}</h1>
+      <section class="card">
+        <p class="lesson">${esc(c.lesson)}</p>
+        <div class="line">
+          <h3>Chapter vocabulary</h3>
+          <div class="actions" style="margin:10px 0">
+            ${c.words.map(([g, e]) => `
+              <span class="pill">
+                <strong>${esc(g)}</strong> (${esc(e)})
+                <button class="icon-btn" data-speak="${esc(g)}" title="Listen">🔊</button>
+              </span>
+            `).join('')}
+          </div>
+        </div>
+        <div class="line">
+          <h2>Quick check</h2>
+          <p>${esc(c.question)}</p>
+          <form id="lesson-form">
+            <input name="answer" aria-label="Chapter answer" required autocomplete="off" placeholder="Type your answer…">
+            <button class="btn">Check & complete</button>
+          </form>
+        </div>
+        <div class="actions">
+          ${btn('Add chapter words to my bank +', 'chapter-words', 'light')}
+          ${btn('← All chapters', 'chapters', 'light')}
+        </div>
+      </section>`;
+  }
+  return `
+    <div class="eyebrow">YOUR LEARNING PATH</div>
+    <h1>Build your German, chapter by chapter.</h1>
+    <p class="muted">Six structured A1 and A2 lessons. Add any chapter’s words straight into your personal vocabulary bank.</p>
+    <div class="chapter-grid">
+      ${chapters.map((ch, i) => `
+        <section class="card">
+          <div class="row" style="width:100%">
+            <span class="tag">${ch.level} · ${String(i + 1).padStart(2, '0')}</span>
+            <span>${state.completed.includes(ch.id) ? '✓ Completed' : ''}</span>
+          </div>
+          <h2 style="margin-top:12px">${esc(ch.title)}</h2>
+          <p class="muted">${esc(ch.topic)}</p>
+          <button class="btn light" data-lesson="${ch.id}">${state.completed.includes(ch.id) ? 'Revisit lesson' : 'Start lesson'} →</button>
+        </section>`).join('')}
+    </div>`;
+}
+
+function chat() {
+  const liveAI = Boolean(config.geminiKey);
+  return `
+    <div class="eyebrow">A SPACE TO TRY, MAKE MISTAKES & GROW</div>
+    <h1>Sprich mit deinem Mate.</h1>
+    <div class="notice ${liveAI ? 'ok' : ''}">
+      ${liveAI
+        ? `<strong>✦ Live Talking AI Tutor Active (${esc(config.geminiModel)})</strong><br>Connected to your personal vocabulary bank (${state.words.length} words) and chapter progress (${state.completed.length}/${chapters.length}). Speak with the 🎤 microphone button or type in German — your tutor replies in natural German, offers gentle corrections, speaks aloud in German, and can suggest new vocabulary to save in one click.`
+        : `<strong>Demo tutor · Connect Gemini API for Live Talking AI</strong><br>Voice playback (🔊) and microphone speech recognition (🎤) are ready right now! To unlock open-ended AI grammar corrections and dynamic conversation synced with your vocabulary bank, click <strong>⚙️ AI & Sync</strong> in the top header and paste your Gemini API key.`}
+    </div>
+    <section class="card">
+      <div class="row">
+        <div class="actions">
+          <strong>● DeutschMate Tutor</strong>
+          <label class="pill" style="cursor:pointer">
+            <input type="checkbox" id="toggle-autospeak" ${config.autoSpeakTutor ? 'checked' : ''} style="margin:0">
+            🔊 Auto-speak German replies
+          </label>
+        </div>
+        <div class="actions">
+          ${!liveAI ? btn('⚙️ Connect Live AI', 'open-settings', 'small light') : ''}
+          ${btn('Clear conversation', 'clear-chat', 'small light')}
+        </div>
+      </div>
+      <div class="chatlog" id="chatlog">
+        <div class="bubble">
+          Hallo! Ich bin dein DeutschMate. Introduce yourself in German, ask me a question, or tap 🎤 to practice speaking aloud!
+          <div class="bubble-actions">
+            <button class="icon-btn" data-speak="Hallo! Ich bin dein DeutschMate. Wie geht es dir heute?">🔊 Listen</button>
+          </div>
+        </div>
+        ${state.chat.map((m) => `
+          <div class="bubble ${m.role === 'user' ? 'user' : ''}">
+            ${esc(m.text)}
+            ${m.role === 'assistant' ? `
+              <div class="bubble-actions">
+                <button class="icon-btn" data-speak="${esc(m.speakText || m.text)}">🔊 Listen</button>
+                ${Array.isArray(m.suggestedWords) ? m.suggestedWords.map(sw =>
+                  state.words.some(w => normalize(w.german) === normalize(sw.german))
+                    ? `<span class="tag">✓ “${esc(sw.german)}” in bank</span>`
+                    : `<button class="icon-btn" data-add-suggested-german="${esc(sw.german)}" data-add-suggested-english="${esc(sw.english)}">+ Save “${esc(sw.german)}” (${esc(sw.english)})</button>`
+                ).join('') : ''}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+      <form id="chat-form">
+        <input name="message" id="chat-input" aria-label="Message to German tutor" required maxlength="1000" placeholder="Schreib oder sprich etwas auf Deutsch…" ${aiBusy ? 'disabled' : ''}>
+        <button type="button" class="btn ${isListening ? 'recording' : 'light'}" data-action="voice-chat" ${aiBusy ? 'disabled' : ''} title="Speak in German">
+          ${isListening ? '⏹ Stop' : '🎤 Speak'}
+        </button>
+        <button class="btn" ${aiBusy ? 'disabled' : ''}>${aiBusy ? 'Thinking…' : 'Send ↗'}</button>
+      </form>
+    </section>`;
+}
+
+async function handleTutorMessage(userText) {
+  state.chat.push({ role: 'user', text: userText });
+  state.chat = state.chat.slice(-100);
+  record();
+
+  if (!config.geminiKey) {
+    const reply = demoReply(userText, state.words);
+    state.chat.push({ role: 'assistant', text: reply, speakText: reply });
+    save();
+    render();
+    if (config.autoSpeakTutor) speakGerman(reply);
+    return;
+  }
+
+  aiBusy = true;
+  render();
+  try {
+    const priorityWords = practiceWords(state.words).slice(0, 12).map(w => `${w.german} (${w.english}, level ${w.level}/6, mistakes ${w.errors})`).join('; ');
+    const completedTitles = chapters.filter(c => state.completed.includes(c.id)).map(c => `${c.level} ${c.title}`).join(', ') || 'None yet';
+    const sysPrompt = `You are DeutschMate, a warm, encouraging, human-like personal German tutor (A1-A2 level).
+You are directly synced with the learner's live learning data:
+- Learner's priority vocabulary to reinforce: ${priorityWords || 'No words saved yet'}
+- Completed chapters: ${completedTitles}
+
+Respond as a JSON object with this exact schema:
+{
+  "reply": "Your friendly response. Naturally weave in 1-2 of their saved German words when appropriate. If they made a German grammar, spelling, or article mistake, gently explain the correction in English and give the natural German phrasing, then ask a short follow-up question in simple German.",
+  "germanSpeech": "Only the German sentences from your reply so the Text-to-Speech voice can read them aloud naturally with pure German pronunciation.",
+  "suggestedWords": [
+    {"german": "der Example", "english": "the example"}
+  ]
+}
+Include 0 to 2 useful new German words from the conversation in "suggestedWords" (always include der/die/das for nouns) so the user can add them to their vocabulary bank with one click.`;
+
+    const recentHistory = state.chat.slice(-10).map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
+    }));
+
+    const raw = await callGeminiAPI({
+      systemInstruction: sysPrompt,
+      contents: recentHistory,
+      responseJson: true
+    });
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { reply: raw, germanSpeech: raw, suggestedWords: [] };
+    }
+    const replyText = parsed.reply || raw;
+    const speakText = parsed.germanSpeech || replyText;
+    const suggestedWords = Array.isArray(parsed.suggestedWords) ? parsed.suggestedWords.slice(0, 2) : [];
+
+    state.chat.push({ role: 'assistant', text: replyText, speakText, suggestedWords });
+    save();
+    if (config.autoSpeakTutor) speakGerman(speakText);
+  } catch (err) {
+    const fallback = `AI connection notice: ${err.message}. Falling back to demo response:\n\n` + demoReply(userText, state.words);
+    state.chat.push({ role: 'assistant', text: fallback });
+    save();
+  } finally {
+    aiBusy = false;
+    render();
+    const log = $('#chatlog');
+    if (log) log.scrollTop = log.scrollHeight;
+  }
+}
+
+function render() {
+  const names = {
+    home: ['⌂', 'Overview'],
+    vocabulary: ['▤', 'Vocabulary'],
+    practice: ['✦', 'Practice'],
+    flashcards: ['▱', 'Flashcards'],
+    chapters: ['▥', 'Chapters'],
+    chat: ['◌', 'Tutor chat']
+  };
+  const liveAI = Boolean(config.geminiKey);
+  $('#app').innerHTML = `
+    <div class="shell">
+      <aside>
+        <div class="brand"><span class="logo">d.</span>Deutsch<span>Mate</span></div>
+        <nav aria-label="Main navigation">
+          ${Object.entries(names).map(([p, [icon, label]]) =>
+            `<button data-action="${p}" class="${page === p ? 'active' : ''}" ${page === p ? 'aria-current="page"' : ''}><i>${icon}</i>${label}</button>`
+          ).join('')}
+        </nav>
+        <div class="aside-note">
+          <strong>Little by little.<br>Tag für Tag.</strong><br>
+          A few minutes today.<br>A little more confidence tomorrow.
+        </div>
+        <div class="profile">
+          <div><span class="avatar">Du</span> ${currentUser ? esc(currentUser.email) : 'Personal learning space'}</div>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <span>MY LEARNING SPACE &nbsp; / &nbsp; ${names[page][1].toUpperCase()}</span>
+          <div class="header-actions">
+            <button class="pill ${liveAI ? 'online' : ''}" data-action="open-settings" title="Configure Gemini AI, Voice & Cloud Sync">
+              ⚙️ AI & Sync: ${liveAI ? 'Live AI Active' : 'Setup API'}
+            </button>
+            <button id="google-sign-in" class="google-sign-in" data-action="google-sign-in">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48">
+                <path fill="#4285F4" d="M44 24.5c0-1.4-.1-2.7-.4-4H24v7.6h11.2c-.5 2.5-2 4.6-4.2 6v5h6.8C41.8 35.5 44 30.5 44 24.5Z"/>
+                <path fill="#34A853" d="M24 45c5.6 0 10.3-1.8 13.8-5l-6.8-5.2c-1.9 1.3-4.3 2-7 2-5.4 0-10-3.7-11.7-8.7h-7v5.4C8.8 40.3 15.8 45 24 45Z"/>
+                <path fill="#FBBC05" d="M12.3 28.1c-.9-2.6-.9-5.6 0-8.2v-5.4h-7a21 21 0 0 0 0 19Z"/>
+                <path fill="#EA4335" d="M24 11.2c3 0 5.6 1 7.7 3l5.8-5.8C34 5 29.5 3 24 3 15.8 3 8.8 7.7 5.3 14.5l7 5.4c1.7-5 6.3-8.7 11.7-8.7Z"/>
+              </svg>
+              ${currentUser ? 'Signed in · Account' : 'Sign in with Google'}
+            </button>
+            <span class="pill">🌿 ${state.activity.length} ${state.activity.length === 1 ? 'day' : 'days'} practiced</span>
+          </div>
+        </header>
+        ${storageError ? '<div role="alert" class="notice">Browser storage is unavailable or full. Export a backup; changes may not persist.</div>' : ''}
+        ${({ home, vocabulary, practice, flashcards, chapters: chapterView, chat }[page])()}
+        ${feedback ? `<div role="status" class="feedback">${esc(feedback)}</div>` : ''}
+
+        <dialog id="settings-dialog" aria-labelledby="settings-title">
+          <h2 id="settings-title">AI Tutor, PDF Analyzer & Cloud Sync</h2>
+          <p class="muted">Connect a free Google Gemini API key to enable live talking AI conversations, automatic noun-article translation, and intelligent PDF vocabulary extraction. Keys are stored only in your own browser.</p>
+          <form id="settings-form" style="flex-direction:column">
+            <label class="field">Google Gemini API Key (from Google AI Studio)
+              <input type="password" name="geminiKey" value="${esc(config.geminiKey)}" placeholder="AIzaSy...">
+            </label>
+            <label class="field">Gemini Model
+              <select name="geminiModel">
+                <option value="gemini-3.8-flash" ${config.geminiModel === 'gemini-3.8-flash' ? 'selected' : ''}>gemini-3.8-flash (Fast & recommended)</option>
+                <option value="gemini-3.6-flash" ${config.geminiModel === 'gemini-3.6-flash' ? 'selected' : ''}>gemini-3.6-flash (Previous Flash)</option>
+                <option value="gemini-3.5-flash-lite" ${config.geminiModel === 'gemini-3.5-flash-lite' ? 'selected' : ''}>gemini-3.5-flash-lite (Ultra-fast & light)</option>
+              </select>
+            </label>
+            <label class="field">German Voice Speed (${config.speechRate}x)
+              <input type="range" name="speechRate" min="0.7" max="1.2" step="0.05" value="${esc(config.speechRate)}">
+            </label>
+            <div class="line">
+              <h3>Optional: Supabase Cloud Sync & Google OAuth</h3>
+              <p class="sub">Add your Supabase Project URL and Anon Key if you want cross-device database sync and live Google OAuth sign-in.</p>
+              <label class="field" style="margin-top:8px">Supabase Project URL
+                <input type="url" name="supabaseUrl" value="${esc(config.supabaseUrl)}" placeholder="https://xyzcompany.supabase.co">
+              </label>
+              <label class="field" style="margin-top:8px">Supabase Anon Public Key
+                <input type="password" name="supabaseAnonKey" value="${esc(config.supabaseAnonKey)}" placeholder="eyJhbGciOi...">
+              </label>
+            </div>
+            <div class="actions" style="margin-top:12px">
+              <button class="btn">Save & sync settings</button>
+              <button type="button" class="btn light" data-action="test-voice">🔊 Test German voice</button>
+              <button type="button" class="btn light" data-action="close-settings">Close</button>
+            </div>
+          </form>
+        </dialog>
+
+        <dialog id="auth-dialog" aria-labelledby="auth-title">
+          <h2 id="auth-title">${currentUser ? 'Google Account Connected' : 'Sign in with Google'}</h2>
+          ${currentUser ? `
+            <p>Signed in as <strong>${esc(currentUser.email)}</strong>.</p>
+            <p class="muted">Your vocabulary bank, spaced-repetition schedule, chapters, and tutor chat are synced with your cloud account.</p>
+            <div class="actions">
+              <button class="btn light" data-action="sign-out">Sign out</button>
+              <button class="btn" data-action="close-auth">Done</button>
+            </div>
+          ` : `
+            <p>${config.supabaseUrl && config.supabaseAnonKey
+              ? 'Your Supabase project is configured. Click below to launch Google OAuth sign-in.'
+              : 'Your learning data is currently saved locally in this browser and synced across open tabs. To sign in with Google and sync across your Mac and iPhone, add your Supabase URL and Anon Key in ⚙️ AI & Sync.'}</p>
+            <div class="actions">
+              ${config.supabaseUrl && config.supabaseAnonKey
+                ? btn('Continue with Google OAuth ↗', 'launch-google-oauth')
+                : btn('⚙️ Open AI & Sync Settings', 'open-settings-from-auth', 'gold')}
+              <button class="btn light" data-action="close-auth">Close</button>
+            </div>
+          `}
+        </dialog>
+
+        <footer class="footer">
+          <span>DeutschMate · A little German, every day.</span>
+          <span>Status: ${esc(syncStatus)} · Cross-tab & module sync active</span>
+        </footer>
+      </main>
+    </div>`;
+  bind();
+}
+
+function bind() {
+  document.querySelectorAll('[data-action]').forEach(el => el.onclick = () => action(el.dataset.action));
+  document.querySelectorAll('[data-lesson]').forEach(el => el.onclick = () => {
+    lessonId = el.dataset.lesson;
+    feedback = '';
+    render();
+  });
+  document.querySelectorAll('[data-speak]').forEach(el => el.onclick = (e) => {
+    e.stopPropagation();
+    speakGerman(el.dataset.speak);
+  });
+  document.querySelectorAll('[data-add-suggested-german]').forEach(el => el.onclick = () => {
+    const g = el.dataset.addSuggestedGerman;
+    const en = el.dataset.addSuggestedEnglish;
+    if (g && en && !state.words.some(w => normalize(w.german) === normalize(g))) {
+      state.words.push(createWord(g, en, Date.now(), 'tutor'));
+      save();
+      feedback = `Added “${g}” (${en}) from Tutor Chat to your vocabulary bank and flashcards.`;
+      render();
+    }
+  });
+  document.querySelectorAll('[data-pdf-idx]').forEach(el => el.onchange = () => {
+    const idx = Number(el.dataset.pdfIdx);
+    if (pdfCandidates[idx]) pdfCandidates[idx].selected = el.checked;
+  });
+  const bindDeletes = () => {
+    document.querySelectorAll('[data-delete]').forEach(el => el.onclick = () => {
+      if (confirm('Delete this word and its review history?')) {
+        state.words = state.words.filter(w => w.id !== el.dataset.delete);
+        save();
+        render();
+      }
+    });
+  };
+  bindDeletes();
+
+  if ($('#search')) {
+    $('#search').oninput = e => {
+      const q = normalize(e.target.value);
+      $('#word-rows').innerHTML = wordRows(state.words.filter(w => normalize(w.german + ' ' + w.english).includes(q)));
+      bindDeletes();
+      document.querySelectorAll('[data-speak]').forEach(el => el.onclick = () => speakGerman(el.dataset.speak));
+    };
+  }
+
+  if ($('#toggle-autospeak')) {
+    $('#toggle-autospeak').onchange = e => {
+      config.autoSpeakTutor = e.target.checked;
+      saveConfig();
+    };
+  }
+
+  if ($('#pdf-upload')) {
+    $('#pdf-upload').onchange = e => {
+      const file = e.target.files?.[0];
+      if (file) handlePdfUpload(file);
+    };
+  }
+
+  if ($('#word-form')) {
+    $('#word-form').onsubmit = async e => {
+      e.preventDefault();
+      const data = new FormData(e.target);
+      let g = (data.get('german') || '').trim();
+      let en = (data.get('english') || '').trim();
+      if (!g) return;
+
+      if (config.geminiKey && !en) {
+        aiBusy = true;
+        render();
+        try {
+          const res = await callGeminiAPI({
+            contents: [{
+              role: 'user',
+              parts: [{
+                text: `For the German word or phrase "${g}", return a JSON object {"german": "...", "english": "..."}. If it is a German noun, include the correct definite article (der, die, or das) in "german". Give a concise English translation in "english".`
+              }]
+            }],
+            responseJson: true
+          });
+          const parsed = JSON.parse(res);
+          if (parsed.german) g = String(parsed.german).trim();
+          if (parsed.english) en = String(parsed.english).trim();
+        } catch (err) {
+          feedback = `Could not auto-translate "${g}": ${err.message}`;
+        } finally {
+          aiBusy = false;
+        }
+      }
+
+      if (!en) {
+        feedback = 'Please provide the English meaning (or connect your Gemini API key for automatic translation).';
+        render();
+        return;
+      }
+
+      if (state.words.some(w => normalize(w.german) === normalize(g))) {
+        feedback = `“${g}” is already in your vocabulary bank.`;
+      } else {
+        state.words.push(createWord(g, en));
+        save();
+        feedback = `Saved “${g}” (${en}). It is immediately synced with Flashcards, Practice, and your AI Tutor.`;
+      }
+      render();
+    };
+  }
+
+  if ($('#practice-form')) {
+    $('#practice-form').onsubmit = e => {
+      e.preventDefault();
+      const w = state.words.find(x => x.id === practiceId);
+      if (!w) return;
+      const ans = new FormData(e.target).get('answer');
+      const correct = normalize(ans) === normalize(w.german);
+      state.words = state.words.map(v => v.id === w.id ? review(v, correct) : v);
+      answered = true;
+      feedback = correct
+        ? `Richtig! “${w.german}” — your next review has been scheduled.`
+        : `Fast! The correct answer is “${w.german}”. This word now gets extra priority in Practice and Flashcards.`;
+      record();
+      if (correct && config.autoSpeakTutor) speakGerman(w.german);
+      render();
+    };
+  }
+
+  if ($('#lesson-form')) {
+    $('#lesson-form').onsubmit = e => {
+      e.preventDefault();
+      const c = chapters.find(x => x.id === lessonId);
+      const a = normalize(new FormData(e.target).get('answer'));
+      if ([c.answer, ...(c.alternatives || [])].some(v => normalize(v) === a)) {
+        if (!state.completed.includes(c.id)) state.completed.push(c.id);
+        record();
+        feedback = 'Richtig! Chapter completed. Your progress is synced across Overview and your AI Tutor.';
+      } else {
+        feedback = `Try again. Hint: the answer is “${c.answer}”.`;
+      }
+      render();
+    };
+  }
+
+  if ($('#chat-form')) {
+    $('#chat-form').onsubmit = async e => {
+      e.preventDefault();
+      const text = (new FormData(e.target).get('message') || '').trim();
+      if (!text || aiBusy) return;
+      await handleTutorMessage(text);
+    };
+  }
+
+  if ($('#settings-form')) {
+    $('#settings-form').onsubmit = async e => {
+      e.preventDefault();
+      const data = new FormData(e.target);
+      config.geminiKey = (data.get('geminiKey') || '').trim();
+      config.geminiModel = data.get('geminiModel') || 'gemini-3.8-flash';
+      config.speechRate = Number(data.get('speechRate')) || 0.95;
+      config.supabaseUrl = (data.get('supabaseUrl') || '').trim();
+      config.supabaseAnonKey = (data.get('supabaseAnonKey') || '').trim();
+      saveConfig();
+      $('#settings-dialog')?.close();
+      feedback = config.geminiKey
+        ? 'AI & Sync settings saved! Live Talking AI Tutor and AI PDF Analyzer are ready.'
+        : 'Settings saved.';
+      if (config.supabaseUrl && config.supabaseAnonKey) await initSupabase();
+      render();
+    };
+  }
+
+  if ($('#import')) $('#import').onchange = importBackup;
+}
+
+async function action(a) {
+  if (a === 'google-sign-in') { $('#auth-dialog').showModal(); return; }
+  if (a === 'close-auth') { $('#auth-dialog').close(); return; }
+  if (a === 'open-settings') { $('#settings-dialog').showModal(); return; }
+  if (a === 'open-settings-from-auth') { $('#auth-dialog').close(); $('#settings-dialog').showModal(); return; }
+  if (a === 'close-settings') { $('#settings-dialog').close(); return; }
+  if (a === 'test-voice') { speakGerman('Hallo! Ich bin dein persönlicher DeutschMate. Lass uns zusammen Deutsch lernen!'); return; }
+  if (a === 'launch-google-oauth') {
+    if (window.location.protocol === 'file:') {
+      feedback = 'Google Sign-In requires a web URL (https:// or http://localhost) and cannot redirect back to a local file:// page. Deploy to Netlify Drop or run a local server first.';
+      $('#auth-dialog')?.close();
+      render();
+      return;
+    }
+    if (!globalThis.supabase) {
+      feedback = 'Cloud sync library could not load. Check your internet connection or ad-blocker.';
+      $('#auth-dialog')?.close();
+      render();
+      return;
+    }
+    if (!supabaseClient) await initSupabase();
+    if (supabaseClient) {
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) {
+        feedback = `Google Sign-In error: ${error.message}`;
+        $('#auth-dialog')?.close();
+        render();
+      }
+    } else {
+      feedback = 'Could not connect to Supabase. Double-check your Project URL and Anon Key in ⚙️ AI & Sync.';
+      $('#auth-dialog')?.close();
+      render();
+    }
+    return;
+  }
+  if (a === 'sign-out') {
+    if (supabaseClient) await supabaseClient.auth.signOut();
+    currentUser = null;
+    syncStatus = 'Local browser storage';
+    $('#auth-dialog')?.close();
+    render();
+    return;
+  }
+  if (a === 'voice-chat') {
+    toggleVoiceInput(async (transcript) => {
+      const input = $('#chat-input');
+      if (input) input.value = transcript;
+      await handleTutorMessage(transcript);
+    });
+    return;
+  }
+  if (a === 'voice-practice') {
+    toggleVoiceInput((transcript) => {
+      const input = $('#practice-input');
+      if (input) {
+        input.value = transcript;
+        input.focus();
+      }
+    });
+    return;
+  }
+  if (a === 'save-pdf-words') {
+    const selected = pdfCandidates.filter(c => c.selected);
+    let addedCount = 0;
+    for (const item of selected) {
+      if (!state.words.some(w => normalize(w.german) === normalize(item.german))) {
+        state.words.push(createWord(item.german, item.english, Date.now(), 'pdf'));
+        addedCount++;
+      }
+    }
+    pdfCandidates = [];
+    pdfSummary = '';
+    save();
+    feedback = `Added ${addedCount} new word(s) from your PDF! They are ready in Flashcards, Practice, and Tutor Chat.`;
+    render();
+    return;
+  }
+  if (a === 'clear-pdf-words') {
+    pdfCandidates = [];
+    pdfSummary = '';
+    render();
+    return;
+  }
+  if (a === 'direction-en' || a === 'direction-de') {
+    flashDirection = a === 'direction-en' ? 'en-de' : 'de-en';
+    revealed = false;
+    feedback = '';
+    render();
+    return;
+  }
+  if (['home', 'vocabulary', 'practice', 'flashcards', 'chapters', 'chat'].includes(a)) {
+    go(a);
+    return;
+  }
+  if (a === 'reveal') {
+    revealed = true;
+    const w = state.words.find(x => x.id === cardId);
+    if (w && config.autoSpeakTutor) speakGerman(w.german);
+  }
+  if (a === 'got' || a === 'again') {
+    state.words = state.words.map(w => w.id === cardId ? review(w, a === 'got') : w);
+    record();
+    cardId = null;
+    revealed = false;
+  }
+  if (a === 'next') {
+    const list = practiceWords(state.words);
+    practiceId = (list.find(w => w.id !== practiceId) || list[0])?.id;
+    answered = false;
+    feedback = '';
+  }
+  if (a === 'chapter-words') {
+    const c = chapters.find(x => x.id === lessonId);
+    let n = 0;
+    c.words.forEach(([g, e]) => {
+      if (!state.words.some(w => normalize(w.german) === normalize(g))) {
+        state.words.push(createWord(g, e, Date.now(), 'chapter'));
+        n++;
+      }
+    });
+    save();
+    feedback = `${n} new chapter word(s) added to your vocabulary bank and synced with Flashcards.`;
+  }
+  if (a === 'clear-chat' && confirm('Clear this conversation?')) {
+    state.chat = [];
+    save();
+  }
+  if (a === 'export') {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'deutschmate-backup.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  render();
+}
+
+async function importBackup(e) {
+  try {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2000000) throw Error();
+    const s = JSON.parse(await file.text());
+    if (s.version !== 1 || !Array.isArray(s.words) || !Array.isArray(s.completed) || !Array.isArray(s.chat) || !Array.isArray(s.activity)) throw Error();
+    const ids = new Set();
+    for (const w of s.words) {
+      if (!w || typeof w.id !== 'string' || ids.has(w.id) || typeof w.german !== 'string' || !w.german.trim() || typeof w.english !== 'string' || !w.english.trim() || ![w.due, w.added, w.level, w.errors, w.reviews].every(Number.isFinite) || !Number.isInteger(w.level) || w.level < 0 || w.level > 6 || w.errors < 0 || w.reviews < 0) throw Error();
+      ids.add(w.id);
+    }
+    if (!s.completed.every(id => chapters.some(c => c.id === id)) || !s.activity.every(d => typeof d === 'string') || !s.chat.every(m => m && ['user', 'assistant'].includes(m.role) && typeof m.text === 'string')) throw Error();
+    if (confirm('Replace all current learning data with this backup?')) {
+      state = s;
+      save();
+      feedback = 'Backup restored and synced across all sections.';
+      render();
+    }
+  } catch {
+    feedback = 'Invalid backup. Choose a DeutschMate JSON export (under 2 MB).';
+    render();
+  }
+}
+
+save(false);
+render();
+initSupabase();
+</script>
+</body>
+</html>
